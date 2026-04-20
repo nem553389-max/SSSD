@@ -1,5 +1,6 @@
--- [[ SAILOR PIECE: English Version - Anti-Ground & Auto Click ]]
+-- [[ SAILOR PIECE: ANTI-GROUND VERSION ]]
 _G.AutoFarm = true
+_G.Height = 10 -- เพิ่มความสูงเป็น 10 หน่วย (กันมุดแน่นอน)
 
 local Player = game:GetService("Players").LocalPlayer
 
@@ -49,8 +50,19 @@ end)
 -- [[ MOVEMENT LOOP ]]
 task.spawn(function()
     while _G.AutoFarm do
-        task.wait(0.2)
+        task.wait(0.1)
         pcall(function()
             equipWeapon()
             local mob = getTarget()
-                    
+            if mob and mob:FindFirstChild("HumanoidRootPart") then
+                local root = Player.Character.HumanoidRootPart
+                -- ล็อคความเร็วให้เป็น 0 เพื่อป้องกันตัวละครร่วงหรือมุด
+                root.Velocity = Vector3.new(0, 0, 0)
+                -- ยืนสูงขึ้นจากหัวมอนสเตอร์ 10 หน่วย
+                root.CFrame = mob.HumanoidRootPart.CFrame * CFrame.new(0, _G.Height, 0)
+            end
+        end)
+    end
+end)
+
+print("Anti-Ground Script: Running")
