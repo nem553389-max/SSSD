@@ -1,15 +1,7 @@
--- [[ SAILOR PIECE: TARGETED AUTO FARM ]]
+-- [[ SAILOR PIECE: ULTIMATE AUTO FARM ]]
 _G.AutoFarm = true
 
 local Player = game:GetService("Players").LocalPlayer
-
--- [[ MONSTER LIST - ALL ISLANDS ]]
-local MonsterList = {
-    "Thief", "Thief Leader", "Buggy Pirate", "Bobby", "Monkey", 
-    "Gorilla", "King Gorilla", "Arlong Minion", "Arlong", 
-    "Marine", "Captain Morgan", "Desert Bandit", "Crocodile",
-    "Sky Guard", "Enel", "Sea Beast", "Yeti"
-}
 
 -- [[ AUTO EQUIP FUNCTION ]]
 local function equipWeapon()
@@ -22,20 +14,21 @@ local function equipWeapon()
     end
 end
 
--- [[ GET TARGET FROM LIST ]]
+-- [[ GET NEAREST TARGET ]]
 local function getTarget()
     local target = nil
-    local dist = math.huge
+    local dist = 1000 
     
     for _, v in pairs(game.Workspace:GetDescendants()) do
-        -- Check if it is a Humanoid and in our MonsterList
-        if v:IsA("Humanoid") and table.find(MonsterList, v.Parent.Name) and v.Health > 0 then
-            local root = v.Parent:FindFirstChild("HumanoidRootPart")
-            if root then
-                local mag = (Player.Character.HumanoidRootPart.Position - root.Position).Magnitude
-                if mag < dist then
-                    dist = mag
-                    target = v.Parent
+        if v:IsA("Humanoid") and v.Parent ~= Player.Character and v.Health > 0 then
+            if not game.Players:GetPlayerFromCharacter(v.Parent) then
+                local root = v.Parent:FindFirstChild("HumanoidRootPart")
+                if root then
+                    local mag = (Player.Character.HumanoidRootPart.Position - root.Position).Magnitude
+                    if mag < dist then
+                        dist = mag
+                        target = v.Parent
+                    end
                 end
             end
         end
@@ -49,17 +42,17 @@ task.spawn(function()
         task.wait(0.1)
         pcall(function()
             if Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") then
-                equipWeapon() -- Always hold weapon
+                equipWeapon()
                 
                 local mob = getTarget()
                 if mob then
-                    -- Anti-Fling (Reset Velocity)
+                    -- Reset Velocity
                     Player.Character.HumanoidRootPart.Velocity = Vector3.new(0, 0, 0)
                     
-                    -- Teleport 7 studs above monster
+                    -- Teleport above monster
                     Player.Character.HumanoidRootPart.CFrame = mob.HumanoidRootPart.CFrame * CFrame.new(0, 7, 0)
                     
-                    -- Fast Attack
+                    -- Attack
                     local tool = Player.Character:FindFirstChildOfClass("Tool")
                     if tool then
                         tool:Activate()
@@ -70,4 +63,4 @@ task.spawn(function()
     end
 end)
 
-print("Targeted Farm Loaded: Farming all listed monsters!")
+print("Script Activated: Ultimate Auto Farm Running")
