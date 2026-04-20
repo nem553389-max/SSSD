@@ -1,15 +1,21 @@
--- [[ SAILOR PIECE: ULTIMATE ANTI-GROUND FIX ]]
+-- [[ SAILOR PIECE: ULTIMATE ANTI-FALL + TWEEN FARM ]]
 _G.AutoFarm = true
-_G.Height = 10 -- Floating height above monster
+_G.Height = 12
 
 local Player = game:GetService("Players").LocalPlayer
 local Character = Player.Character or Player.CharacterAdded:Wait()
+local TweenService = game:GetService("TweenService")
 
--- [[ CREATE ANTI-GRAVITY ]]
-local bv = Instance.new("BodyVelocity")
-bv.MaxForce = Vector3.new(1e6, 1e6, 1e6)
-bv.Velocity = Vector3.new(0, 0, 0)
-bv.Parent = Character:WaitForChild("HumanoidRootPart")
+-- [[ DISABLE PHYSICS TO PREVENT FALLING ]]
+task.spawn(function()
+    while _G.AutoFarm do
+        task.wait(0.5)
+        if Character and Character:FindFirstChild("Humanoid") then
+            -- ปิดการคำนวณพื้นดินเพื่อไม่ให้ตัวละครร่วง
+            Character.Humanoid.PlatformStand = true 
+        end
+    end
+end)
 
 -- [[ AUTO EQUIP ]]
 local function equipWeapon()
@@ -46,7 +52,7 @@ task.spawn(function()
     end
 end)
 
--- [[ MOVEMENT LOOP ]]
+-- [[ TWEEN MOVEMENT ]]
 task.spawn(function()
     while _G.AutoFarm do
         task.wait(0.1)
@@ -54,14 +60,15 @@ task.spawn(function()
             equipWeapon()
             local mob = getTarget()
             if mob and mob:FindFirstChild("HumanoidRootPart") then
-                local myRoot = Character.HumanoidRootPart
-                -- Force stay at 0 velocity (No falling)
-                myRoot.Velocity = Vector3.new(0, 0, 0)
-                -- Teleport to position above the monster
-                myRoot.CFrame = mob.HumanoidRootPart.CFrame * CFrame.new(0, _G.Height, 0) * CFrame.Angles(math.rad(-90), 0, 0)
+                local root = Character.HumanoidRootPart
+                local targetPos = mob.HumanoidRootPart.CFrame * CFrame.new(0, _G.Height, 0) * CFrame.Angles(math.rad(-90), 0, 0)
+                
+                -- ใช้ Tween เพื่อล็อคตำแหน่งให้สมูทและไม่มุด
+                TweenService:Create(root, TweenInfo.new(0.1, Enum.EasingStyle.Linear), {CFrame = targetPos}):Play()
+                root.Velocity = Vector3.new(0, 0, 0)
             end
         end)
     end
 end)
 
-print("Ultimate Anti-Ground Loaded!")
+print("Ultimate Fix: Tween & PlatformStand Loaded!")
