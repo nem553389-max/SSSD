@@ -1,4 +1,4 @@
--- [[ SAILOR PIECE: ULTIMATE ANTI-FALL + TWEEN FARM ]]
+-- [[ SAILOR PIECE: SPAWN-FIX VERSION - NO THAI ]]
 _G.AutoFarm = true
 _G.Height = 12
 
@@ -11,7 +11,7 @@ task.spawn(function()
     while _G.AutoFarm do
         task.wait(0.5)
         if Character and Character:FindFirstChild("Humanoid") then
-            -- ปิดการคำนวณพื้นดินเพื่อไม่ให้ตัวละครร่วง
+            -- Disable platform physics to prevent falling
             Character.Humanoid.PlatformStand = true 
         end
     end
@@ -25,14 +25,15 @@ local function equipWeapon()
     end
 end
 
--- [[ TARGET FINDER ]]
+-- [[ UPDATED TARGET FINDER - SPAWN CHECK ]]
 local function getTarget()
     local target = nil
     local dist = 1000
     for _, v in pairs(game.Workspace:GetChildren()) do
         if v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 and v ~= Character then
+            -- Check if the monster's model is loaded and not clipping
             local root = v:FindFirstChild("HumanoidRootPart")
-            if root then
+            if root and root.Parent and root.Parent:FindFirstChild("Head") then
                 local mag = (Character.HumanoidRootPart.Position - root.Position).Magnitude
                 if mag < dist then dist = mag; target = v end
             end
@@ -52,23 +53,32 @@ task.spawn(function()
     end
 end)
 
--- [[ TWEEN MOVEMENT ]]
+-- [[ TWEEN MOVEMENT - SPAWN-AWARE ]]
 task.spawn(function()
     while _G.AutoFarm do
         task.wait(0.1)
         pcall(function()
             equipWeapon()
             local mob = getTarget()
-            if mob and mob:FindFirstChild("HumanoidRootPart") then
+            if mob then
                 local root = Character.HumanoidRootPart
-                local targetPos = mob.HumanoidRootPart.CFrame * CFrame.new(0, _G.Height, 0) * CFrame.Angles(math.rad(-90), 0, 0)
+                -- Additional check for clipping during spawn
+                local mobRoot = mob:FindFirstChild("HumanoidRootPart")
+                if mobRoot and (root.Position - mobRoot.Position).Magnitude < 200 then
+                    -- Delay slightly if the monster is very close to ground or spawn
+                    if mobRoot.Position.Y < (game.Workspace.Baseplate or game.Workspace:FindFirstChildOfClass("BasePart")).Position.Y + 2 then
+                        task.wait(0.05)
+                    end
+                end
                 
-                -- ใช้ Tween เพื่อล็อคตำแหน่งให้สมูทและไม่มุด
-                TweenService:Create(root, TweenInfo.new(0.1, Enum.EasingStyle.Linear), {CFrame = targetPos}):Play()
+                local targetPos = mobRoot.CFrame * CFrame.new(0, _G.Height, 0) * CFrame.Angles(math.rad(-90), 0, 0)
+                
+                -- Smooth tween movement to prevent sudden clips
+                TweenService:Create(root, TweenInfo.new(0.08, Enum.EasingStyle.Linear), {CFrame = targetPos}):Play()
                 root.Velocity = Vector3.new(0, 0, 0)
             end
         end)
     end
 end)
 
-print("Ultimate Fix: Tween & PlatformStand Loaded!")
+print("Spawn-Fix Version Loaded!")
