@@ -1,30 +1,9 @@
--- [[ SAILOR PIECE: AUTO EQUIP BEST WEAPON + AUTO FARM ]]
+-- [[ SAILOR PIECE: TARGETED AUTO FARM ]]
 _G.AutoFarm = true
 
 local Player = game:GetService("Players").LocalPlayer
 
--- [[ FUNCTION: AUTO EQUIP BEST TOOL ]]
-local function equipBestTool()
-    local char = Player.Character
-    if char and not char:FindFirstChildOfClass("Tool") then
-        local backpack = Player.Backpack
-        local bestTool = nil
-        
-        -- Priority: Find any Tool in Backpack
-        for _, tool in pairs(backpack:GetChildren()) do
-            if tool:IsA("Tool") then
-                bestTool = tool
-                break
-            end
-        end
-        
-        if bestTool then
-            char:WaitForChild("Humanoid"):EquipTool(bestTool)
-        end
-    end
-end
-
--- [[ MONSTER LIST ]]
+-- [[ MONSTER LIST - ALL ISLANDS ]]
 local MonsterList = {
     "Thief", "Thief Leader", "Buggy Pirate", "Bobby", "Monkey", 
     "Gorilla", "King Gorilla", "Arlong Minion", "Arlong", 
@@ -32,22 +11,24 @@ local MonsterList = {
     "Sky Guard", "Enel", "Sea Beast", "Yeti"
 }
 
--- [[ ATTACK FUNCTION ]]
-local function attack()
+-- [[ AUTO EQUIP FUNCTION ]]
+local function equipWeapon()
     local char = Player.Character
-    if char then
-        local tool = char:FindFirstChildOfClass("Tool")
-        if tool then 
-            tool:Activate() 
+    if char and not char:FindFirstChildOfClass("Tool") then
+        local tool = Player.Backpack:FindFirstChildOfClass("Tool")
+        if tool then
+            char:WaitForChild("Humanoid"):EquipTool(tool)
         end
     end
 end
 
--- [[ FIND TARGET FUNCTION ]]
+-- [[ GET TARGET FROM LIST ]]
 local function getTarget()
     local target = nil
     local dist = math.huge
+    
     for _, v in pairs(game.Workspace:GetDescendants()) do
+        -- Check if it is a Humanoid and in our MonsterList
         if v:IsA("Humanoid") and table.find(MonsterList, v.Parent.Name) and v.Health > 0 then
             local root = v.Parent:FindFirstChild("HumanoidRootPart")
             if root then
@@ -68,23 +49,25 @@ task.spawn(function()
         task.wait(0.1)
         pcall(function()
             if Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") then
-                -- Always ensure weapon is equipped
-                equipBestTool()
+                equipWeapon() -- Always hold weapon
                 
                 local mob = getTarget()
                 if mob then
-                    -- Anti-Freeze / Anti-Fling
+                    -- Anti-Fling (Reset Velocity)
                     Player.Character.HumanoidRootPart.Velocity = Vector3.new(0, 0, 0)
                     
-                    -- Teleport above target (7 units)
+                    -- Teleport 7 studs above monster
                     Player.Character.HumanoidRootPart.CFrame = mob.HumanoidRootPart.CFrame * CFrame.new(0, 7, 0)
                     
-                    -- Attack
-                    attack()
+                    -- Fast Attack
+                    local tool = Player.Character:FindFirstChildOfClass("Tool")
+                    if tool then
+                        tool:Activate()
+                    end
                 end
             end
         end)
     end
 end)
 
-print("Auto Equip & Farm Loaded")
+print("Targeted Farm Loaded: Farming all listed monsters!")
