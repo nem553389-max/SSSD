@@ -1,13 +1,12 @@
--- [[ SAILOR PIECE: DEEP SEARCH & AUTO FLY ]]
+-- [[ SAILOR PIECE: CLEAN & STABLE AUTO FARM ]]
 _G.AutoFarm = true
 _G.Height = 10
 _G.TweenSpeed = 100
 
 local Player = game:GetService("Players").LocalPlayer
-local Character = Player.Character or Player.CharacterAdded:Wait()
 local TweenService = game:GetService("TweenService")
 
--- [[ LEVEL DATA (LV 0 START) ]]
+-- ตารางรายชื่อมอนสเตอร์ (เริ่มที่เลเวล 0)
 local MobData = {
     {Level = 0, Name = "Thief"},
     {Level = 20, Name = "Strong Thief"},
@@ -15,83 +14,61 @@ local MobData = {
     {Level = 100, Name = "Marine"}
 }
 
--- [[ ANTI-RAGDOLL & NOCLIP ]]
+-- ระบบป้องกันตัวละครนอนนิ่ง (Anti-Ragdoll)
 task.spawn(function()
     while _G.AutoFarm do
-        task.wait(0.1)
+        task.wait(0.5)
         pcall(function()
-            if Character:FindFirstChild("Humanoid") then
-                Character.Humanoid:ChangeState(Enum.HumanoidStateType.Physics)
-                Character.Humanoid.PlatformStand = true
-                for _, part in pairs(Character:GetChildren()) do
-                    if part:IsA("BasePart") then part.CanCollide = false end
+            local char = Player.Character
+            if char and char:FindFirstChild("Humanoid") then
+                char.Humanoid.PlatformStand = true
+                char.Humanoid:ChangeState(Enum.HumanoidStateType.Physics)
+                -- Noclip: กันติดบั๊ก
+                for _, v in pairs(char:GetChildren()) do
+                    if v:IsA("BasePart") then v.CanCollide = false end
                 end
             end
         end)
     end
 end)
 
--- [[ GET CURRENT MOB NAME ]]
-local function getCurrentMob()
-    local myLevel = 0
-    pcall(function() myLevel = Player.leaderstats.Level.Value end)
-    pcall(function() if myLevel == 0 then myLevel = Player.Data.Level.Value end end)
+-- ฟังก์ชันเช็คมอนสเตอร์ตามเลเวล
+local function getMobName()
+    local lvl = 0
+    pcall(function() lvl = Player.leaderstats.Level.Value end)
+    pcall(function() if lvl == 0 then lvl = Player.Data.Level.Value end end)
     
-    local targetMob = "Thief"
+    local name = MobData[1].Name
     for _, v in ipairs(MobData) do
-        if myLevel >= v.Level then targetMob = v.Name end
+        if lvl >= v.Level then name = v.Name end
     end
-    return targetMob
+    return name
 end
 
--- [[ TWEEN FUNCTION ]]
-local function flyTo(targetCFrame)
-    local root = Character:FindFirstChild("HumanoidRootPart")
-    if root then
-        local distance = (root.Position - targetCFrame.Position).Magnitude
-        if distance > 1 then
-            local tweenInfo = TweenInfo.new(distance / _G.TweenSpeed, Enum.EasingStyle.Linear)
-            TweenService:Create(root, tweenInfo, {CFrame = targetCFrame}):Play()
-        end
-    end
-end
-
--- [[ MAIN LOOP ]]
+-- ลูปหลัก (ทำงานทันทีที่รัน)
 task.spawn(function()
     while _G.AutoFarm do
         task.wait(0.1)
-        pcall(function()
-            local mobName = getCurrentMob()
+        local success, err = pcall(function()
+            local char = Player.Character
+            if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+            
+            local mobName = getMobName()
             local target = nil
             
-            -- ค้นหามอนสเตอร์แบบละเอียด (Search in all Workspace)
-            for _, v in pairs(game.Workspace:GetDescendants()) do
+            -- ค้นหามอนสเตอร์ใน Workspace
+            for _, v in pairs(game.Workspace:GetChildren()) do
                 if v.Name == mobName and v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 then
                     target = v
                     break
                 end
             end
-
+            
             if target and target:FindFirstChild("HumanoidRootPart") then
+                local root = char.HumanoidRootPart
                 local targetPos = target.HumanoidRootPart.CFrame * CFrame.new(0, _G.Height, 0) * CFrame.Angles(math.rad(-90), 0, 0)
                 
-                -- สั่งบิน
-                flyTo(targetPos)
-                
-                -- สวมอาวุธ
-                if not Character:FindFirstChildOfClass("Tool") then
-                    local tool = Player.Backpack:FindFirstChildOfClass("Tool")
-                    if tool then Character.Humanoid:EquipTool(tool) end
-                end
-                
-                -- โจมตีเมื่อถึงระยะ
-                if (Character.HumanoidRootPart.Position - target.HumanoidRootPart.Position).Magnitude < 20 then
-                    local weapon = Character:FindFirstChildOfClass("Tool")
-                    if weapon then weapon:Activate() end
-                end
-            end
-        end)
-    end
-end)
-
-print("Bypass Tween: Searching for target...")
+                -- ระบบบิน (Tween)
+                local dist = (root.Position - targetPos.Position).Magnitude
+                if dist > 1
+                            
