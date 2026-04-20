@@ -51,3 +51,18 @@ task.spawn(function()
                                 task.wait()
                                 if not _G.AutoFarm then break end
                                         
+-- บรรทัดเดิมของคุณที่มีอยู่แล้ว
+local Window = Library.CreateLib("★ Valennity Hub ★", "BloodTheme")
+
+-- ก๊อปปี้ส่วนนี้ไปวางเพิ่มเพื่อให้ UI ขยับได้ 100%
+local CoreGui = game:GetService("CoreGui")
+local MainUI = CoreGui:FindFirstChild("★ Valennity Hub ★") or CoreGui:FindFirstChild("Library")
+
+if MainUI then
+    local Frame = MainUI:FindFirstChildOfClass("Frame")
+    if Frame then
+        Frame.Active = true
+        Frame.Draggable = true
+    end
+                                        end
+                                        
