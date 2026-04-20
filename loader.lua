@@ -1,24 +1,54 @@
--- [[ SAILOR PIECE: TEST VERSION - FORCE TELEPORT ]]
+-- [[ SAILOR PIECE: LEVEL 0 START + ANTI-GROUND ]]
 _G.AutoFarm = true
-_G.Height = 10 -- ระยะความสูงจากหัวมอนสเตอร์
+_G.Height = 10
 
 local Player = game:GetService("Players").LocalPlayer
 local Character = Player.Character or Player.CharacterAdded:Wait()
+local TweenService = game:GetService("TweenService")
 
--- [[ แก้ปัญหานอนนิ่ง ]]
+-- [[ LEVEL DATA TABLE (START FROM LV 0) ]]
+local MobData = {
+    {Level = 0, Name = "Thief"}, -- เริ่มต้นที่เลเวล 0
+    {Level = 20, Name = "Strong Thief"},
+    {Level = 50, Name = "Pirate"},
+    {Level = 100, Name = "Marine"}
+}
+
+-- [[ FIX: FORCE STAND & NOCLIP ]]
 task.spawn(function()
     while _G.AutoFarm do
-        task.wait(0.5)
+        task.wait(0.1)
         pcall(function()
             if Character:FindFirstChild("Humanoid") then
-                -- บังคับให้ตัวละครยืนเสมอ ไม่ให้นอน Ragdoll
+                -- บังคับให้ยืนเสมอ และแก้สถานะนอนนิ่ง
                 Character.Humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
+                Character.Humanoid.PlatformStand = false
+            end
+            -- ระบบ Noclip กันติดบั๊กพื้น
+            for _, part in pairs(Character:GetChildren()) do
+                if part:IsA("BasePart") then
+                    part.CanCollide = false
+                end
             end
         end)
     end
 end)
 
--- [[ สวมใส่อาวุธ ]]
+local function getCurrentMob()
+    local myLevel = 0
+    -- เช็คเลเวลจากทุกที่ที่อาจจะเป็นไปได้
+    pcall(function() myLevel = Player.leaderstats.Level.Value end)
+    pcall(function() if myLevel == 0 then myLevel = Player.Data.Level.Value end end)
+    
+    local targetMob = MobData[1].Name
+    for _, v in ipairs(MobData) do
+        if myLevel >= v.Level then
+            targetMob = v.Name
+        end
+    end
+    return targetMob
+end
+
 local function equipWeapon()
     if not Character:FindFirstChildOfClass("Tool") then
         local tool = Player.Backpack:FindFirstChildOfClass("Tool")
@@ -26,18 +56,18 @@ local function equipWeapon()
     end
 end
 
--- [[ ลูปฟาร์มหลัก ]]
+-- [[ MAIN FARM LOOP ]]
 task.spawn(function()
     while _G.AutoFarm do
         task.wait(0.1)
         pcall(function()
             equipWeapon()
-            
-            -- ค้นหามอนสเตอร์ที่ชื่อว่า Thief
+            local mobName = getCurrentMob()
             local target = nil
+            
+            -- ค้นหามอนสเตอร์
             for _, v in pairs(game.Workspace:GetChildren()) do
-                -- ตรวจสอบชื่อ "Thief" (เช็คตัวพิมพ์เล็กพิมพ์ใหญ่ให้ตรงในเกมนะครับ)
-                if (v.Name == "Thief" or v.Name:find("Thief")) and v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 then
+                if v.Name == mobName and v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 then
                     target = v
                     break
                 end
@@ -47,17 +77,16 @@ task.spawn(function()
                 local root = Character.HumanoidRootPart
                 root.Velocity = Vector3.new(0, 0, 0)
                 
-                -- วาร์ปไปที่มอนสเตอร์ (ลอยเหนือหัว 10 หน่วย)
-                root.CFrame = target.HumanoidRootPart.CFrame * CFrame.new(0, _G.Height, 0) * CFrame.Angles(math.rad(-90), 0, 0)
+                -- วาร์ปไปเหนือมอนสเตอร์ (กันมุดดิน 100%)
+                local targetPos = target.HumanoidRootPart.CFrame * CFrame.new(0, _G.Height, 0) * CFrame.Angles(math.rad(-90), 0, 0)
+                root.CFrame = targetPos
                 
-                -- สั่งคลิกโจมตี
+                -- โจมตี
                 local tool = Character:FindFirstChildOfClass("Tool")
-                if tool then 
-                    tool:Activate() 
-                end
+                if tool then tool:Activate() end
             end
         end)
     end
 end)
 
-print("Test Version: Force Teleport Thief Loaded!")
+print("Script Started: Level 0 Farm Active")
