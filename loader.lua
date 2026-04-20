@@ -1,53 +1,24 @@
--- [[ SAILOR PIECE: CORRECTED NAMES (Thief Lv.1) ]]
+-- [[ SAILOR PIECE: TEST VERSION - FORCE TELEPORT ]]
 _G.AutoFarm = true
-_G.Height = 12
+_G.Height = 10 -- ระยะความสูงจากหัวมอนสเตอร์
 
 local Player = game:GetService("Players").LocalPlayer
 local Character = Player.Character or Player.CharacterAdded:Wait()
-local TweenService = game:GetService("TweenService")
 
--- [[ UPDATED MOB DATA: Corrected Lv.1 to Thief ]]
-local MobData = {
-    {Level = 1, Name = "Thief"},
-    {Level = 20, Name = "Strong Thief"},
-    {Level = 45, Name = "Pirate"},
-    {Level = 75, Name = "Brute Pirate"},
-    {Level = 110, Name = "Monkey"},
-    {Level = 150, Name = "Gorilla"},
-    {Level = 200, Name = "Marine"},
-    {Level = 250, Name = "Elite Marine"},
-    {Level = 320, Name = "Fishman"},
-    {Level = 400, Name = "Elite Fishman"},
-    {Level = 500, Name = "Sky Pirate"},
-    {Level = 650, Name = "Elite Sky Pirate"}
-}
-
-local function getCurrentMob()
-    local myLevel = 0
-    pcall(function() myLevel = Player.leaderstats.Level.Value end)
-    if myLevel == 0 then
-        pcall(function() myLevel = Player.Data.Level.Value end)
-    end
-
-    local targetMob = MobData[1].Name
-    for _, v in ipairs(MobData) do
-        if myLevel >= v.Level then
-            targetMob = v.Name
-        end
-    end
-    return targetMob
-end
-
+-- [[ แก้ปัญหานอนนิ่ง ]]
 task.spawn(function()
     while _G.AutoFarm do
         task.wait(0.5)
-        if Character and Character:FindFirstChild("Humanoid") then
-            Character.Humanoid.PlatformStand = true 
-            Character.HumanoidRootPart.Velocity = Vector3.new(0, 0, 0)
-        end
+        pcall(function()
+            if Character:FindFirstChild("Humanoid") then
+                -- บังคับให้ตัวละครยืนเสมอ ไม่ให้นอน Ragdoll
+                Character.Humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
+            end
+        end)
     end
 end)
 
+-- [[ สวมใส่อาวุธ ]]
 local function equipWeapon()
     if not Character:FindFirstChildOfClass("Tool") then
         local tool = Player.Backpack:FindFirstChildOfClass("Tool")
@@ -55,49 +26,38 @@ local function equipWeapon()
     end
 end
 
-local function getTarget()
-    local mobName = getCurrentMob()
-    local target = nil
-    local dist = 15000 
-    
-    for _, v in pairs(game.Workspace:GetChildren()) do
-        if v.Name == mobName and v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 then
-            local root = v:FindFirstChild("HumanoidRootPart")
-            if root then
-                local mag = (Character.HumanoidRootPart.Position - root.Position).Magnitude
-                if mag < dist then
-                    dist = mag
-                    target = v
-                end
-            end
-        end
-    end
-    return target
-end
-
-task.spawn(function()
-    while _G.AutoFarm do
-        task.wait(0.1)
-        pcall(function()
-            local tool = Character:FindFirstChildOfClass("Tool")
-            if tool then tool:Activate() end
-        end)
-    end
-end)
-
+-- [[ ลูปฟาร์มหลัก ]]
 task.spawn(function()
     while _G.AutoFarm do
         task.wait(0.1)
         pcall(function()
             equipWeapon()
-            local mob = getTarget()
-            if mob and mob:FindFirstChild("HumanoidRootPart") then
+            
+            -- ค้นหามอนสเตอร์ที่ชื่อว่า Thief
+            local target = nil
+            for _, v in pairs(game.Workspace:GetChildren()) do
+                -- ตรวจสอบชื่อ "Thief" (เช็คตัวพิมพ์เล็กพิมพ์ใหญ่ให้ตรงในเกมนะครับ)
+                if (v.Name == "Thief" or v.Name:find("Thief")) and v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 then
+                    target = v
+                    break
+                end
+            end
+
+            if target and target:FindFirstChild("HumanoidRootPart") then
                 local root = Character.HumanoidRootPart
-                local targetPos = mob.HumanoidRootPart.CFrame * CFrame.new(0, _G.Height, 0) * CFrame.Angles(math.rad(-90), 0, 0)
-                TweenService:Create(root, TweenInfo.new(0.1, Enum.EasingStyle.Linear), {CFrame = targetPos}):Play()
+                root.Velocity = Vector3.new(0, 0, 0)
+                
+                -- วาร์ปไปที่มอนสเตอร์ (ลอยเหนือหัว 10 หน่วย)
+                root.CFrame = target.HumanoidRootPart.CFrame * CFrame.new(0, _G.Height, 0) * CFrame.Angles(math.rad(-90), 0, 0)
+                
+                -- สั่งคลิกโจมตี
+                local tool = Character:FindFirstChildOfClass("Tool")
+                if tool then 
+                    tool:Activate() 
+                end
             end
         end)
     end
 end)
 
-print("Auto Farm: Thief (Lv.1) Loaded!")
+print("Test Version: Force Teleport Thief Loaded!")
